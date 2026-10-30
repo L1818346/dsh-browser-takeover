@@ -1,0 +1,11 @@
+{
+  "name": "dsh-browser-takeover",
+  "description": "浏览器网址接管：网址清单与登录状态、打开登录页、web_open 导航。不保存账号密码。",
+  "version": "0.7.0",
+  "entry": {
+    "name": "dsh-browser-takeover",
+    "inject": [
+      "tools"
+    ]
+  }
+}

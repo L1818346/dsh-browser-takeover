@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Browser Session Takeover",
+    "description": "Drives the plugin debug browser: register sites, check sign-in state, open login pages, and navigate with web_open. Stores no credentials."
+  }
+}

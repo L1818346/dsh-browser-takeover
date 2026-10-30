@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Video storyboard">
+  <rect x="4" y="10" width="56" height="44" rx="8" fill="#247bbf"/>
+  <g fill="#ffffff" opacity="0.92">
+    <rect x="11" y="17" width="13" height="11" rx="2"/>
+    <rect x="26" y="17" width="13" height="11" rx="2"/>
+    <rect x="41" y="17" width="12" height="11" rx="2"/>
+    <rect x="11" y="31" width="13" height="11" rx="2"/>
+    <rect x="26" y="31" width="13" height="11" rx="2"/>
+    <rect x="41" y="31" width="12" height="11" rx="2"/>
+  </g>
+  <g fill="#247bbf">
+    <text x="17.5" y="25.5" font-family="monospace" font-size="8" text-anchor="middle">1</text>
+    <text x="32.5" y="25.5" font-family="monospace" font-size="8" text-anchor="middle">2</text>
+    <text x="47" y="25.5" font-family="monospace" font-size="8" text-anchor="middle">3</text>
+    <text x="17.5" y="39.5" font-family="monospace" font-size="8" text-anchor="middle">4</text>
+    <text x="32.5" y="39.5" font-family="monospace" font-size="8" text-anchor="middle">5</text>
+    <text x="47" y="39.5" font-family="monospace" font-size="8" text-anchor="middle">6</text>
+  </g>
+  <rect x="11" y="46" width="42" height="4" rx="2" fill="#7fd3c8" opacity="0.9"/>
+</svg>

@@ -1,0 +1,83 @@
+{
+  "name": "dsh-browser-takeover",
+  "version": "0.7.0",
+  "description": "浏览器网址接管：接管带调试端口的专用浏览器——维护要登录的网址清单、检查登录状态、打开登录页，并提供 web_open 导航/按可见文字点击。不保存任何账号密码。",
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "browser",
+    "cdp",
+    "remote-debugging",
+    "login",
+    "navigation",
+    "web_open"
+  ],
+  "homepage": "https://github.com/L1818346/dsh-browser-takeover#readme",
+  "bugs": {
+    "url": "https://github.com/L1818346/dsh-browser-takeover/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/L1818346/dsh-browser-takeover.git"
+  },
+  "author": "L1818346",
+  "contributors": [
+    "SAOS-3624"
+  ],
+  "license": "MIT",
+  "type": "module",
+  "main": "./src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg",
+    "./browser-time": "./src/browser-time.js",
+    "./sites": "./src/sites.js",
+    "./web-nav": "./src/web-nav.js",
+    "./tool-spec": "./src/tool-spec.js"
+  },
+  "files": [
+    "src",
+    "scripts",
+    "docs",
+    "client.js",
+    "locale/*.json",
+    "icon.svg",
+    "cordis.patch.yml",
+    "dsh.plugin.json",
+    "README.md",
+    "README.en.md",
+    "CHANGELOG.md",
+    "LICENSE",
+    "CREDITS.md",
+    "NOTICE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test",
+    "check": "node scripts/check-syntax.mjs",
+    "smoke": "node scripts/smoke.mjs"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/dsh-tools": ">=0.1.0-rc.7"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/dsh-tools": {
+      "optional": true
+    }
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": []
+    }
+  }
+}

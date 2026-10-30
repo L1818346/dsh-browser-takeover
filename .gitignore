@@ -1,0 +1,7 @@
+# 依赖与本地输出
+node_modules/
+_dl/
+.tmp/
+*.log
+.DS_Store
+Thumbs.db
