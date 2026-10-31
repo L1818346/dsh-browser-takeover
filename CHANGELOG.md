@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.9.2] — 2026-10-31
+
+### Changed
+
+- **登录判定表扩到三层**，判定逻辑独立成 `src/session-cookies.js`：
+  - `IDENTITY_COOKIES`（命中即「已登录」）：GitHub、Google、Microsoft、Meta、X、LinkedIn、
+    Amazon、Netflix、Spotify、Discord、Steam、Notion、Keycloak、CAS、Shibboleth（前缀）、
+    NextAuth、Supabase（前缀）、百度、微博、淘宝/阿里云、京东、拼多多、抖音、小红书、知乎、
+    豆瓣、B 站、学习通、网易、QQ/微信、CSDN、Coursera、edX 等约 120 个名字。
+  - `GENERIC_SESSION_COOKIES`（「可能已登录」）：`PHPSESSID` / `JSESSIONID` /
+    `ASP.NET_SessionId` / `laravel_session` / `connect.sid` / `MoodleSession` / `BbRouter` 等
+    匿名访客也会拿到的框架会话。
+  - `ANONYMOUS_COOKIES` + 前缀规则（永不计数）：`_gh_sess`、CSRF 令牌、`_ga`、`_hjSession*`、
+    `AWSALB`、`__cf_bm`、`datr`、`NID`、界面偏好等 60 多个。
+- 兜底规则扩展：`session / sess / sso / auth / token / ticket / login / logged / uid / jwt /
+  bearer / passport / remember / credential / identity / principal / userid / username`。
+- 裸 `uid`、`sub`、`ck` 收窄为"可能"或移出身份表：它们在很多站点是访客/订阅类 cookie，
+  留在身份表会产生假"已登录"。
+- 设置页文案与 README 同步（三层表 + 怎么加名字）。
+
+### Added
+
+- `test/cookie-table.test.mjs`：30 条用例，22 个平台的正例 + 全类匿名噪音的反例 +
+  大小写、短值、开关型 cookie、档位不重复。
+
 ## [0.9.1] — 2026-10-31
 
 ### Fixed

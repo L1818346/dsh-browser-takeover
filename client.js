@@ -232,9 +232,9 @@ window.__ModuleLoader__.load({
                 }, '删除')))))),
 
         h('div', { className: 'dvs-note' },
-          '判定规则：该站点的登录 cookie 名字命中已知表（SESSDATA / JSESSIONID / user_session / logged_in / dotcom_user 等）即"已登录"；',
-          '只命中通用规则（名字里有 session / sso / auth / token 且值不为空）时显示"可能已登录"，不冒充确定；',
-          '端口没开时显示"无法判断"，而不是冒充"未登录"。'),
+          '判定规则：命中身份 cookie（SESSDATA / user_session / BDUSS / z_c0 / _uid 等）→「已登录」；',
+          '只有框架会话（PHPSESSID / JSESSIONID 等）或名字像票据的兜底规则 →「可能已登录」，不冒充确定；',
+          '端口没开 →「无法判断」，而不是冒充「未登录」。名字表在 src/session-cookies.js。'),
       );
     }
 

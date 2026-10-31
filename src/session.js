@@ -1,57 +1,23 @@
 /**
  * session.js — 「那个浏览器此刻在每个站点的登录状态」，工具与设置页共用一份实现。
  *
- * 为什么要把这段从 settings-api.js 里搬出来：现在有两个入口问同一个问题——
- * 设置页的界面，以及 Agent 调 `web_sites` 时的查询。两边各写一遍必然漂移，
- * 而这里正是**隐私边界**所在：只回显会话 cookie 的**名字**，值不离开宿主进程。
+ * 判定表在 session-cookies.js（身份型 / 框架通用型 / 匿名噪音 三层）；
+ * 这里只负责：按 host 过滤 cookie、把命中结果折成两档结论、以及那个浏览器到底开没开。
  *
- * 判定规则不变：
+ * 判定规则：
  *   - 端口没开 → `conclusive:false`（"无法判断"），绝不冒充"未登录"；
- *   - 端口开了 → 该站点的会话 cookie 存在即视为已登录。
+ *   - 命中身份 cookie → `signedIn:true, confidence:'certain'`；
+ *   - 只命中框架会话或通用票据规则 → `signedIn:true, confidence:'likely'`（"可能已登录"）；
+ *   - 一条都没命中 → `signedIn:false`。
+ *
+ * 隐私边界：只回显 cookie 的**名字**。值唯一被读的地方是 `logged_in` 的 yes/no 判断，
+ * 而且只用于判定，不外传、不落盘。
  */
 import { listTargets, probeBrowser, readBrowserCookies } from './cdp.js';
 import { loadSites } from './sites.js';
+import { sessionSignalOf } from './session-cookies.js';
 
-/**
- * 登录 cookie 的**已知名字**：命中即认定已登录（`confidence: 'certain'`）。
- *
- * 为什么不能只靠这一张表：每个站的会话 cookie 叫什么完全是站点自己定的。
- * 这张表原来只有学习通/B 站那一套（`SESSDATA`、`JSESSIONID`、`UID`…），于是
- * 在 GitHub 上登录成功、状态页却显示"未登录"——GitHub 用的是
- * `user_session` / `logged_in` / `dotcom_user`。所以下面还有一条通用规则。
- */
-export const SESSION_COOKIE = /^(SESSDATA|bili_jct|DedeUserID|_uid|UID|DSID|fid|_d|EDU-SSO|ssoToken|token|JSESSIONID|JSESSIONID_WEB|PHPSESSID|user_session|__Host-user_session_same_site|dotcom_user|logged_in|SID|SAPISID|HSID|SSID|__Secure-1PSID|__Secure-3PSID|ESTSAUTH|ESTSAUTHPERSISTENT|z_c0|SUB)$/i;
-
-/**
- * 通用规则：名字里带会话/单点/令牌字样，且值不像空壳（长度 ≥ 8）。
- *
- * 为什么需要：真正的登录票据几乎都长这样（`user_session`、`session_token`、`ssoTicket`…），
- * 而纯统计/偏好类 cookie（`_dd_s_v2`、`color_mode`、`cpu_bucket`）不会命中。
- * 只命中这条时**不敢说死**，回 `confidence:'likely'`，界面上显示"可能已登录"。
- *
- * 刻意不收 `sess`：GitHub 的 `_gh_sess` 在**未登录**时也有（加密的匿名会话），
- * 收了它就会把没登录的 GitHub 说成"可能已登录"。`session` 这个完整词则没有这个问题。
- */
-export const SESSION_LIKE = /(?:^|[^a-z])(session|sso|auth|token|ticket|login|logged|uid)(?:[^a-z]|$)/i;
-
-/** `logged_in` 这类开关型 cookie：值必须是 yes 才算数（`logged_in=no` 是"没登录"） */
-const VALUE_YES = /^(yes|true|1)$/i;
-
-/**
- * 一条 cookie 算不算"登录信号"。
- * @returns {'definite'|'likely'|null}
- */
-export function sessionSignalOf(cookie) {
-  const name = String(cookie?.name ?? '');
-  if (!name) return null;
-  const value = String(cookie?.value ?? '');
-
-  // 开关型：名字在表里，但值说"没登录"
-  if (/^logged_in$/i.test(name)) return VALUE_YES.test(value) ? 'definite' : null;
-  if (SESSION_COOKIE.test(name)) return 'definite';
-  if (value.length >= 8 && SESSION_LIKE.test(name)) return 'likely';
-  return null;
-}
+export { sessionSignalOf };
 
 /** cookie 的 domain（`.chaoxing.com`）是否覆盖页面 host（`hdu.fanya.chaoxing.com`） */
 export function covers(cookieDomain, host) {
@@ -70,8 +36,8 @@ export function hostOf(rawUrl) {
 }
 
 /**
- * 该站点命中的登录 cookie 名字，分成"确定"和"像"两档。
- * **只回名字，值不参与任何返回**（唯一读值的地方是 `logged_in` 的 yes/no 判断）。
+ * 该站点命中的登录 cookie 名字，分成"确定"和"可能"两档。
+ * 同一个名字只出现在一档里（确定优先）。
  */
 export function sessionSignal(cookies, host) {
   const definite = new Set();
@@ -79,8 +45,10 @@ export function sessionSignal(cookies, host) {
   for (const cookie of cookies ?? []) {
     if (!covers(cookie?.domain, host)) continue;
     const tier = sessionSignalOf(cookie);
-    if (tier === 'definite') definite.add(String(cookie.name));
-    else if (tier === 'likely') likely.add(String(cookie.name));
+    const name = String(cookie?.name ?? '');
+    if (!name) continue;
+    if (tier === 'definite') definite.add(name);
+    else if (tier === 'likely') likely.add(name);
   }
   for (const name of definite) likely.delete(name);
   return {
@@ -107,7 +75,7 @@ export async function cookiesSnapshot(port) {
 /**
  * 单个站点的登录状态。
  * `conclusive` 为 false 时 `signedIn` 是 `null` 而不是 false —— 说不准就说不准。
- * 命中已知名字才是 `confidence:'certain'`；只靠通用规则是 `'likely'`。
+ * 命中身份 cookie 才是 `confidence:'certain'`；只命中通用规则是 `'likely'`。
  */
 export function signInFrom(cookies, host, conclusive) {
   if (!conclusive || !Array.isArray(cookies) || !host) {
@@ -137,7 +105,7 @@ export async function signInStatus(port, rawUrl) {
 
 /**
  * 整个清单的状态快照：浏览器状态 + 打开的页面 + 每个站点的登录状态。
- * 一次调用只读一遍 cookie（4 个站点不该读 4 次）。
+ * 一次调用只读一遍 cookie（10 个站点不该读 10 次）。
  *
  * @returns {Promise<{port:number, browser:object, pages:Array<{url:string,title:string}>,
  *   conclusive:boolean, sites:Array<object>}>}

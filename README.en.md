@@ -6,6 +6,22 @@
 
 ---
 
+## What 0.9.2 does
+
+The sign-in table grows from "a handful of sites" into **three tiers** covering the common
+platforms, frameworks and SSO providers:
+
+| Tier | Meaning | Badge | Examples |
+|---|---|---|---|
+| Identity cookie | only exists once signed in | **Signed in** | `user_session` · `SESSDATA` · `BDUSS` · `z_c0` · `_tb_token_` · `pt_key` · `li_at` · `ESTSAUTH` · `KEYCLOAK_IDENTITY` · `__Secure-next-auth.session-token` |
+| Framework session | also handed to anonymous visitors | **Probably signed in** | `PHPSESSID` · `JSESSIONID` · `laravel_session` · `connect.sid` · `MoodleSession` · `sid` |
+| Anonymous noise | unrelated to login, never counted | ignored | `_gh_sess` · `csrftoken` · `_ga` · `_hjSessionUser_*` · `AWSALB` · `NID` · `datr` · `color_mode` |
+| Fallback rule | name carries session / sso / auth / token / ticket… and a non-trivial value | **Probably signed in** | everything not in the tables |
+
+The table lives in [src/session-cookies.js](src/session-cookies.js), one name per line: when a site
+that is signed in reads as "not signed in", add its cookie name to `IDENTITY_COOKIES` (`npm test`
+then proves you did not break the negative cases).
+
 ## What 0.9.1 fixes
 
 - **GitHub showed "not signed in" after logging in.** The known-cookie list only carried the
@@ -49,7 +65,7 @@
 | Look the list up | tool `web_sites` | side-effect free: is this URL saved, and is the browser signed in there? starts no browser, loads no page |
 | Navigate / click by text | tool `web_open` | navigates and clicks ONE element in a browser started with a debug port; every frame is searched |
 | Site list | Settings → Browser Session Takeover | URLs only — no credentials |
-| Sign-in state | same | derived from the *names* of that site's session cookies; values never leave the host |
+| Sign-in state | same | derived from the **names** of that site's cookies (three-tier table + fallback rule); values never leave the host |
 | Open login page | same | new tab when the port is up, otherwise launches the browser with the debug flag |
 
 At most one click per call. No loops, no bulk crawling.
@@ -175,8 +191,9 @@ instead of a guess.
 - No credential reads/fills, no cookie **values** exported. The settings page and `web_sites` echo
   session cookie **names** only (`SESSDATA`, `user_session`, ...). The one exception is a switch
   cookie like `logged_in`: only its `yes`/`no` answer is used, never the value itself.
-- Sign-in state has three levels: **signed in** (known name), **probably signed in** (generic rule
-  only), **not signed in**; with the port down it says "cannot tell" instead of pretending.
+- Sign-in state has three levels: **signed in** (identity cookie), **probably signed in** (framework
+  session or fallback rule), **not signed in**; with the port down it says "cannot tell" instead of
+  pretending. The table is [src/session-cookies.js](src/session-cookies.js) — add names there.
 
 ## Troubleshooting
 
@@ -187,8 +204,9 @@ instead of a guess.
 | settings says port closed | not running, or a different port | check `browser.json` |
 | click does nothing | site uses `window.open`; popup blocked | `<a href>` entries are navigated directly; others can only be clicked |
 | sign-in "cannot tell" | browser not running | start the debug browser |
-| signed in but shown as "not signed in" | that site's login cookie name is not in the known list (0.9.0 and earlier knew only the Chaoxing/Bilibili names) | 0.9.1 adds a generic rule; if it is still wrong, send me the cookie name and it goes into `SESSION_COOKIE` |
-| "probably signed in" | only the generic rule matched | usually it is signed in; name the cookie and it can be promoted to certain |
+| signed in but shown as "not signed in" | that site's login cookie name is missing from `IDENTITY_COOKIES` in [src/session-cookies.js](src/session-cookies.js) | add the name there; the fallback rule usually reports "probably signed in" meanwhile |
+| "probably signed in" | only a framework session (`PHPSESSID`, …) or the fallback rule matched | usually it is signed in; add the name to `IDENTITY_COOKIES` to make it certain |
+| "signed in" while signed out | an anonymous cookie was taken for an identity cookie | move the name to `ANONYMOUS_COOKIES` and add a test |
 
 ## Development
 

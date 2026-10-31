@@ -41,6 +41,20 @@
 - 清单匹配独立成 `src/lookup.js`（纯函数），登录态判断抽到 `src/session.js`；
   新增 `test/` 下的单元测试。**升级后需重启一次 DSH Desktop**，工具与提示词才会重新组装。
 
+## 0.9.2 做了什么
+
+把登录判定表从"认得几个站点"扩成**三层表**，覆盖市面上常见平台、框架与单点登录：
+
+| 层 | 含义 | 界面 | 例子 |
+|---|---|---|---|
+| 身份 cookie | 只有登录后才出现 | **已登录** | `user_session` · `SESSDATA` · `BDUSS` · `z_c0` · `_tb_token_` · `pt_key` · `li_at` · `ESTSAUTH` · `KEYCLOAK_IDENTITY` · `__Secure-next-auth.session-token` |
+| 框架会话 | 匿名访客也会拿到 | **可能已登录** | `PHPSESSID` · `JSESSIONID` · `laravel_session` · `connect.sid` · `MoodleSession` · `sid` |
+| 匿名噪音 | 与登录无关，永不计数 | 不计入 | `_gh_sess` · `csrftoken` · `_ga` · `_hjSessionUser_*` · `AWSALB` · `NID` · `datr` · `color_mode` |
+| 兜底规则 | 名字含 session / sso / auth / token / ticket… 且值不短 | **可能已登录** | 表里没有的站点靠它 |
+
+表在 [src/session-cookies.js](src/session-cookies.js)，一个名字一行；遇到"登录了却显示未登录"，
+把该站的 cookie 名字加进 `IDENTITY_COOKIES` 即可（`npm test` 会顺手验证没把别人带歪）。
+
 ## 功能
 
 | 能力 | 入口 | 说明 |
@@ -48,7 +62,7 @@
 | 查清单 | 工具 `web_sites` | 零副作用：这条网址存过没有、那个浏览器此刻登录着没有。不启动浏览器、不打开页面 |
 | 页面导航 / 按文字点击 | 工具 `web_open` | 在带调试端口的浏览器里打开地址，按可见文字点一个元素；会搜所有 iframe |
 | 网址清单 | 设置 → 浏览器网址接管 | 只存 URL 与添加时间，不存账号密码 |
-| 登录状态 | 同上 | 依据该站点的**会话 cookie 名字**判断，cookie 的值不离开宿主进程 |
+| 登录状态 | 同上 | 依据该站点的**会话 cookie 名字**判断（三层表 + 兜底规则），cookie 的值不离开宿主进程 |
 | 打开登录页 | 同上 | 端口开着就开新标签，没开就带调试参数启动浏览器 |
 
 一次调用最多点**一个**元素；不做循环点击、不批量爬取。
@@ -173,8 +187,9 @@ web_open({ match: "国家安全教育", index: 0 })
 - 不读、不填账号密码输入框；不导出 cookie 的**值**。设置页和 `web_sites` 只回显会话 cookie 的
   **名字**（如 `SESSDATA`、`user_session`）。唯一的例外是 `logged_in` 这类开关型 cookie：
   只拿 `yes`/`no` 做判断，值本身不外传。
-- 登录状态分三档：**已登录**（命中已知名字）/ **可能已登录**（只命中通用规则）/
-  **未登录**；端口没开时是「无法判断」，而不是冒充「未登录」。
+- 登录状态分三档：**已登录**（命中身份 cookie）/ **可能已登录**（框架会话或兜底规则）/
+  **未登录**；端口没开时是「无法判断」，而不是冒充「未登录」。判定表在
+  [src/session-cookies.js](src/session-cookies.js)，名字可以自己往里加。
 
 ## 故障排查
 
@@ -185,8 +200,9 @@ web_open({ match: "国家安全教育", index: 0 })
 | 设置页显示「端口未开」 | 同上，或端口不是 9333 | 检查 `browser.json` |
 | 点了没反应 | 站点用 `window.open`，被弹窗拦截 | 对 `<a href>` 插件会直接导航；其余元素只能真点 |
 | 登录状态「无法判断」 | 浏览器没开，读不到 cookie | 先启动调试浏览器 |
-| 明明登录了却显示「未登录」 | 该站的登录 cookie 名字不在已知表里（0.9.0 及更早只认学习通/B 站那套） | 0.9.1 起有通用规则兜底；仍不对就把该站的 cookie 名字发我，加进 `SESSION_COOKIE` |
-| 显示「可能已登录」 | 只命中通用规则，没命中已知名字 | 一般就是登录了；想更确定就把名字告诉我，升成「已登录」 |
+| 明明登录了却显示「未登录」 | 该站的登录 cookie 名字不在 [src/session-cookies.js](src/session-cookies.js) 的 `IDENTITY_COOKIES` 里 | 把名字加进那个数组；兜底规则一般会先兜成「可能已登录」 |
+| 显示「可能已登录」 | 只命中框架会话（`PHPSESSID` 等）或兜底规则 | 一般就是登录了；想更确定就把名字加进 `IDENTITY_COOKIES` |
+| 没登录却说「已登录」 | 某个匿名 cookie 被当成了身份 cookie | 把名字挪进 `ANONYMOUS_COOKIES`，并补一条测试 |
 
 ## 开发
 
