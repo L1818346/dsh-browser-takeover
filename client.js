@@ -154,6 +154,10 @@ window.__ModuleLoader__.load({
         h('p', { className: 'dvs-intro' },
           '这里维护一份"需要登录的网址"清单，并检查这个插件专用浏览器在各自站点上的登录状态。',
           '账号密码由你在浏览器里输入；插件只读会话 cookie 的名字，不读它的值，也不保存任何凭据。'),
+        h('p', { className: 'dvs-intro' },
+          '你让 Agent 去访问一个网址时，它会先用 web_sites 查这份清单：',
+          '清单里的（或同一站点的）优先用 web_open 在这个浏览器里打开——那里的会话是你已经登录的那个；',
+          '清单里没有的，也可以让它用 remember 记进来。'),
 
         h('section', { className: 'dvs-card' },
           h('div', { className: 'dvs-card-head' },

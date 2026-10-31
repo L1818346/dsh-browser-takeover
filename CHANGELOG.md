@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.8.0] — 2026-10-31
+
+### Added
+
+- `web_sites` 工具：访问网址前先查「要登录的网址」清单——这条地址存过没有、那个浏览器
+  此刻登录着没有。零副作用：不启动浏览器、不打开页面、不点任何东西。
+- 系统提示里的一段约定（`src/prompt.js`）：用户让 Agent 访问网址时，先 `web_sites`，
+  清单里的（或同一站点的）优先用 `web_open`，不要改用 `web_fetch` 抓 HTML 顶替。
+- `web_open` 新增两个参数：`remember`（打开前先把网址记进清单，下次访问自动算"已保存"）、
+  `launch`（端口没开时让插件自己拉起浏览器再打开）。
+- `web_open` 的返回里带上 `site`（清单命中情况与一句结论）与 `signIn`（登录态），
+  所以即使 Agent 没先查，也看得到"这条网址存过没有、登录着没有"。
+- `test/lookup.test.mjs`：清单匹配规则的单元测试（完全一致 / 同主机 / 同域名 / 坏地址 / 裸域名）。
+
+### Changed
+
+- 清单匹配独立成 `src/lookup.js`（纯函数、可单测）；登录态判断抽到 `src/session.js`，
+  设置页与工具共用同一份实现，隐私边界（只回显会话 cookie 名字）只写一遍。
+- `scripts/smoke.mjs` 现在校验两个工具、五条路由和一个提示词段，并真的执行一次
+  `web_sites` 与 `web_open`（端口不通的路径，不碰浏览器）。
+- `scripts/check-syntax.mjs` 把 `client.js` 与 `test/` 也纳入语法检查。
+- README 增加"Agent 访问网址的顺序"，并说明为什么不能直接用你主浏览器的 profile。
+
 ## [0.7.0] — 2026-10-31
 
 ### Added

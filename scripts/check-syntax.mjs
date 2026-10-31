@@ -10,10 +10,12 @@ import { promisify } from 'node:util';
 
 const run = promisify(execFile);
 
-const DIRS = ['src', 'bin', 'scripts'];
+const DIRS = ['src', 'bin', 'scripts', 'test'];
+/** 顶层那些不在 DIRS 里的文件也要过一遍（client.js 由 Client 模块表加载） */
+const ROOT_FILES = ['client.js'];
 const EXT = /\.(mjs|js)$/;
 
-const files = [];
+const files = [...ROOT_FILES].filter((f) => EXT.test(f));
 for (const dir of DIRS) {
   let entries = [];
   try {

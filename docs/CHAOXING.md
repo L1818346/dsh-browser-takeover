@@ -31,10 +31,20 @@ did-finish-load:url: https://mooc1.chaoxing.com/visit/interaction
 
 ## 2. 网页版可以（iframe 支持已就绪）
 
-### 2.1 用 `web_open` 走过去（实测通过）
+### 2.1 先用 `web_sites` 确认清单，再用 `web_open` 走过去（实测通过）
+
+0.8.0 起，访问网址前先查一次清单：这条网址存过没有、那个浏览器此刻登录着没有。
+插件往系统提示里写了这段约定，所以 Agent 会自己先查；手动起手也一样：
+
+```js
+web_sites({ url: "https://hdu.fanya.chaoxing.com/portal" })
+// → lookup.saved: true / match: "exact"，note 直接告诉你"用 web_open 在插件浏览器里打开"
+// 端口没开时 signIn.conclusive 是 false（"无法判断"），不会冒充"未登录"
+```
 
 `web_open` 是 0.5.2 加的导航工具：在**带调试端口、已登录**的浏览器里打开地址，再按可见文字点一个入口。
-它会在**所有 frame** 里找（学习通的课程列表就在 `mooc1-1.chaoxing.com` 的 iframe 里）。
+它会在**所有 frame** 里找（学习通的课程列表就在 `mooc1-1.chaoxing.com` 的 iframe 里），
+返回里也带着这条网址的清单命中情况与登录态。
 
 ```js
 // ① 门户 → 学习空间（实测：A 标签 href=https://i.mooc.chaoxing.com/）

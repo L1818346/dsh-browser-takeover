@@ -12,16 +12,16 @@
  *   GET  /status?host=…        → 单站点查询（给工具/排障用，设置页已改用 /sites）
  *
  * **绝不返回 cookie 的值**，只返回命中会话 cookie 的**名字**。名字泄露没有意义，值才是事故。
+ *
+ * 登录态本身由 session.js 统一回答（`web_sites` 工具走同一份实现）：这里只做 HTTP 包装。
  */
 import {
-  configuredPort, evaluate, launchBrowser, listTargets, probeBrowser, readBrowserCookies, waitForPort,
+  configuredPort, evaluate, launchBrowser, listTargets, waitForPort,
 } from './browser-time.js';
 import { addSite, loadSites, removeSite } from './sites.js';
+import { describeSites, hostOf, signInStatus } from './session.js';
 
 const BASE = '/dsh-browser-takeover';
-
-/** 这些 cookie 一旦出现，基本可以认定"这个浏览器在该站点是登录状态"。 */
-const SESSION_COOKIE = /^(SESSDATA|bili_jct|DedeUserID|_uid|UID|DSID|fid|JSESSIONID|JSESSIONID_WEB|_d|EDU-SSO|ssoToken|token)$/i;
 
 function sendJson(res, status, body) {
   const text = JSON.stringify(body);
@@ -44,60 +44,17 @@ function readBody(req, limit = 8 * 1024) {
   });
 }
 
-/** cookie 的 domain（`.chaoxing.com`）是否覆盖页面 host（`hdu.fanya.chaoxing.com`） */
-function covers(cookieDomain, host) {
-  if (!cookieDomain || !host) return false;
-  const d = cookieDomain.replace(/^\./, '').toLowerCase();
-  const h = host.toLowerCase();
-  return h === d || h.endsWith(`.${d}`);
-}
-
-function hostOf(rawUrl) {
-  try {
-    return new URL(rawUrl).host;
-  } catch {
-    return '';
-  }
-}
-
-/** 会话 cookie 名字（按站点过滤）；值一律不读出来 */
-function sessionNamesFor(cookies, host) {
-  return [...new Set(
-    cookies
-      .filter((c) => SESSION_COOKIE.test(String(c?.name ?? '')) && covers(c.domain, host))
-      .map((c) => String(c.name)),
-  )].sort();
-}
-
-async function snapshot(port) {
-  const browser = await probeBrowser({ port }).catch(() => ({ state: 'error', port }));
-  const targets = (await listTargets({ port }).catch(() => null)) ?? [];
-  let cookies = [];
-  try { cookies = (await readBrowserCookies({ port })) ?? []; } catch { cookies = []; }
-  const pages = targets.filter((t) => t.type === 'page')
-    .map((t) => ({ url: t.url ?? '', title: t.title ?? '' }));
-  const conclusive = browser.state !== 'closed' && browser.state !== 'unconfigured' && browser.state !== 'error';
-  return { browser, pages, cookies, conclusive };
-}
-
 function sitesHandler(port) {
   return async (req, res) => {
     try {
-      const sites = loadSites();
-      const { browser, pages, cookies, conclusive } = await snapshot(port);
-      const rows = sites.map((site) => {
-        const host = hostOf(site.url);
-        const names = sessionNamesFor(cookies, host);
-        return {
-          url: site.url,
-          host,
-          addedAt: site.addedAt,
-          signedIn: names.length > 0,
-          conclusive,
-          sessionCookieNames: names,
-        };
+      const snapshot = await describeSites(port);
+      sendJson(res, 200, {
+        ok: true,
+        port,
+        browser: snapshot.browser,
+        pages: snapshot.pages,
+        sites: snapshot.sites,
       });
-      sendJson(res, 200, { ok: true, port, browser, pages, sites: rows });
     } catch (error) {
       sendJson(res, 200, { ok: false, where: 'sites', error: String(error?.message ?? error) });
     }
@@ -137,17 +94,20 @@ async function statusHandler(req, res) {
     const port = configuredPort() ?? 9333;
     const url = new URL(req.url ?? '/', `http://127.0.0.1:${port}`);
     const wantHost = url.searchParams.get('host') || '';
-    const { browser, pages, cookies, conclusive } = await snapshot(port);
-    const names = wantHost ? sessionNamesFor(cookies, wantHost) : [];
+    const snapshot = await describeSites(port);
+    const signIn = wantHost
+      ? await signInStatus(port, `https://${wantHost}/`)
+      : { conclusive: false, signedIn: null, sessionCookieNames: [] };
     sendJson(res, 200, {
       ok: true,
       port,
       host: wantHost || null,
-      browser,
-      pages,
-      signedIn: names.length > 0,
-      sessionCookieNames: names,
-      conclusive,
+      browser: snapshot.browser,
+      pages: snapshot.pages,
+      signedIn: signIn.signedIn,
+      sessionCookieNames: signIn.sessionCookieNames,
+      conclusive: wantHost ? signIn.conclusive : snapshot.conclusive,
+      addedCount: snapshot.sites.length,
       clientHalfInGraph: clientHalfInGraph(),
     });
   } catch (error) {

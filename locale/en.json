@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "Browser Session Takeover",
-    "description": "Drives the plugin debug browser: register sites, check sign-in state, open login pages, and navigate with web_open. Stores no credentials."
+    "description": "Drives the plugin debug browser: register login-gated sites, check sign-in state, open login pages, look URLs up with web_sites, and navigate with web_open. The agent checks the saved list before visiting a URL. Stores no credentials."
   }
 }
