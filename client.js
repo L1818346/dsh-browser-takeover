@@ -67,9 +67,17 @@ window.__ModuleLoader__.load({
       if (!row.conclusive) {
         return h('span', { className: 'dvs-badge dvs-idle' }, h('span', { className: 'dvs-dot' }), '无法判断');
       }
-      return row.signedIn
-        ? h('span', { className: 'dvs-badge dvs-ok' }, h('span', { className: 'dvs-dot' }), '已登录')
-        : h('span', { className: 'dvs-badge dvs-warn' }, h('span', { className: 'dvs-dot' }), '未登录');
+      if (!row.signedIn) {
+        return h('span', { className: 'dvs-badge dvs-warn' }, h('span', { className: 'dvs-dot' }), '未登录');
+      }
+      // 只命中"名字像会话票据"的通用规则时不敢说死，单独显示一档
+      if (row.confidence === 'likely') {
+        return h('span', {
+          className: 'dvs-badge dvs-warn',
+          title: '命中了像会话的 cookie，但它不在已知的登录 cookie 名字表里',
+        }, h('span', { className: 'dvs-dot' }), '可能已登录');
+      }
+      return h('span', { className: 'dvs-badge dvs-ok' }, h('span', { className: 'dvs-dot' }), '已登录');
     }
 
     function SettingsSection() {
@@ -224,7 +232,8 @@ window.__ModuleLoader__.load({
                 }, '删除')))))),
 
         h('div', { className: 'dvs-note' },
-          '判定规则：该站点的会话 cookie（SESSDATA / _uid / UID / JSESSIONID 等）存在即视为已登录；',
+          '判定规则：该站点的登录 cookie 名字命中已知表（SESSDATA / JSESSIONID / user_session / logged_in / dotcom_user 等）即"已登录"；',
+          '只命中通用规则（名字里有 session / sso / auth / token 且值不为空）时显示"可能已登录"，不冒充确定；',
           '端口没开时显示"无法判断"，而不是冒充"未登录"。'),
       );
     }

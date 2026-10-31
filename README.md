@@ -5,6 +5,19 @@
 
 ---
 
+## 0.9.1 修了什么
+
+- **GitHub 登录后仍显示"未登录"**：原来的登录判定只认学习通/B 站那套 cookie 名字
+  （`SESSDATA`、`JSESSIONID`、`UID`…），GitHub 用的是 `user_session` / `logged_in` / `dotcom_user`，
+  一个都不在白名单里。现在白名单补齐了 GitHub、Google、Microsoft、知乎、微博等常见名字，
+  并加了一条通用规则兜底。
+- **判定分两档**：命中已知名字 → `confidence: 'certain'`（界面显示"已登录"）；
+  只命中通用规则（名字里有 session / sso / auth / token / ticket 且值不为空）→ `'likely'`
+  （界面显示"**可能已登录**"，不冒充确定）。`logged_in` 这类开关型 cookie 按值判断，
+  `logged_in=no` 不算登录。
+- 反例也钉住了：GitHub 未登录时同样有 `_gh_sess`，所以通用规则刻意不收 `sess`，
+  否则会把没登录的 GitHub 说成"可能已登录"。
+
 ## 0.9.0 改了什么
 
 - **清单从空开始**：不再预置任何网址，也不读别的插件留下的 `video-storyboard-sites.json`。
@@ -158,8 +171,10 @@ web_open({ match: "国家安全教育", index: 0 })
 - 网址清单在 `~/.dsh/browser-takeover-sites.json`，只存 URL 和时间戳；**初始为空**，
   插件不预置、也不从别的文件名里捞。
 - 不读、不填账号密码输入框；不导出 cookie 的**值**。设置页和 `web_sites` 只回显会话 cookie 的
-  **名字**（如 `SESSDATA`、`JSESSIONID`）。
-- 端口没开时，登录状态显示「无法判断」，而不是冒充「未登录」。
+  **名字**（如 `SESSDATA`、`user_session`）。唯一的例外是 `logged_in` 这类开关型 cookie：
+  只拿 `yes`/`no` 做判断，值本身不外传。
+- 登录状态分三档：**已登录**（命中已知名字）/ **可能已登录**（只命中通用规则）/
+  **未登录**；端口没开时是「无法判断」，而不是冒充「未登录」。
 
 ## 故障排查
 
@@ -170,6 +185,8 @@ web_open({ match: "国家安全教育", index: 0 })
 | 设置页显示「端口未开」 | 同上，或端口不是 9333 | 检查 `browser.json` |
 | 点了没反应 | 站点用 `window.open`，被弹窗拦截 | 对 `<a href>` 插件会直接导航；其余元素只能真点 |
 | 登录状态「无法判断」 | 浏览器没开，读不到 cookie | 先启动调试浏览器 |
+| 明明登录了却显示「未登录」 | 该站的登录 cookie 名字不在已知表里（0.9.0 及更早只认学习通/B 站那套） | 0.9.1 起有通用规则兜底；仍不对就把该站的 cookie 名字发我，加进 `SESSION_COOKIE` |
+| 显示「可能已登录」 | 只命中通用规则，没命中已知名字 | 一般就是登录了；想更确定就把名字告诉我，升成「已登录」 |
 
 ## 开发
 

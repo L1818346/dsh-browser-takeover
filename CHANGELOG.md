@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.9.1] — 2026-10-31
+
+### Fixed
+
+- **GitHub 登录成功却显示「未登录」**：登录判定只认 `SESSDATA` / `JSESSIONID` / `UID` 这套
+  学习通/B 站的名字，而 GitHub 用的是 `user_session` / `logged_in` / `dotcom_user`。
+  白名单补齐 GitHub、Google、Microsoft、知乎、微博等常见名字，并加通用规则兜底。
+- `logged_in` 这类开关型 cookie 改为按值判断：`logged_in=no` 不算登录（之前只看名字会误报）。
+
+### Added
+
+- 判定分两档：命中已知名字 → `confidence: 'certain'`；只命中通用规则
+  （名字含 session / sso / auth / token / ticket 且值长度 ≥ 8）→ `'likely'`。
+  设置页对应显示「已登录」/「可能已登录」，`web_sites` 与 `signIn` 输出里带 `confidence`。
+- 通用规则刻意不收 `sess`：GitHub 未登录时也有 `_gh_sess`，收了会误报。
+- `test/session.test.mjs`：10 条用例，含 GitHub 登录/未登录两组真实 cookie 形状。
+
 ## [0.9.0] — 2026-10-31
 
 ### Changed

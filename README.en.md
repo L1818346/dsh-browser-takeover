@@ -6,6 +6,18 @@
 
 ---
 
+## What 0.9.1 fixes
+
+- **GitHub showed "not signed in" after logging in.** The known-cookie list only carried the
+  Chaoxing/Bilibili names (`SESSDATA`, `JSESSIONID`, `UID`, …); GitHub uses `user_session` /
+  `logged_in` / `dotcom_user`. The list now covers GitHub, Google, Microsoft, Zhihu, Weibo and
+  friends, plus a generic rule for everything else.
+- **Two confidence levels**: a known name → `certain` ("Signed in"); only the generic rule →
+  `likely` ("Probably signed in"), which is never presented as certainty. Switch cookies such as
+  `logged_in` are checked by value (`logged_in=no` is not a login).
+- The negative case is pinned too: a signed-out GitHub still carries `_gh_sess`, so the generic rule
+  deliberately ignores `sess` — otherwise a signed-out GitHub would read as "probably signed in".
+
 ## What 0.9.0 changes
 
 - **The list starts empty** — no preset URL, and no reading another plugin's
@@ -161,8 +173,10 @@ instead of a guess.
 - Site list: `~/.dsh/browser-takeover-sites.json` — URLs and timestamps only, **empty by default**,
   with nothing preset and nothing adopted from another plugin's file.
 - No credential reads/fills, no cookie **values** exported. The settings page and `web_sites` echo
-  session cookie **names** only (`SESSDATA`, `JSESSIONID`, ...).
-- When the port is down, sign-in state is reported as "cannot tell", not "signed out".
+  session cookie **names** only (`SESSDATA`, `user_session`, ...). The one exception is a switch
+  cookie like `logged_in`: only its `yes`/`no` answer is used, never the value itself.
+- Sign-in state has three levels: **signed in** (known name), **probably signed in** (generic rule
+  only), **not signed in**; with the port down it says "cannot tell" instead of pretending.
 
 ## Troubleshooting
 
@@ -173,6 +187,8 @@ instead of a guess.
 | settings says port closed | not running, or a different port | check `browser.json` |
 | click does nothing | site uses `window.open`; popup blocked | `<a href>` entries are navigated directly; others can only be clicked |
 | sign-in "cannot tell" | browser not running | start the debug browser |
+| signed in but shown as "not signed in" | that site's login cookie name is not in the known list (0.9.0 and earlier knew only the Chaoxing/Bilibili names) | 0.9.1 adds a generic rule; if it is still wrong, send me the cookie name and it goes into `SESSION_COOKIE` |
+| "probably signed in" | only the generic rule matched | usually it is signed in; name the cookie and it can be promoted to certain |
 
 ## Development
 
