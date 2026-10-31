@@ -8,19 +8,14 @@
  * 文件位置：`$DSH_HOME/browser-takeover-sites.json`（没有 DSH_HOME 就是 ~/.dsh/…）。
  * 只存 URL 和时间戳 —— **不存任何账号、密码、cookie 值**。
  *
- * 旧文件名 `video-storyboard-sites.json` 仍然读得到，
- * 第一次保存时自动搬到新文件，用户不用手动迁。
+ * 清单的初始状态是**空的**：插件不预置任何网址，也不读别的插件留下的清单文件。
+ * 装好之后要加什么，由用户在设置页（或 `web_open({ …, remember: true })`）自己加。
  */
-import { mkdirSync, existsSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 
 const FILE_NAME = 'browser-takeover-sites.json';
-const LEGACY_FILE_NAME = 'video-storyboard-sites.json';
-/** 第一次打开设置页时给的默认项：只放入口页，登录与否现查 */
-const DEFAULTS = [
-  'https://hdu.fanya.chaoxing.com/portal',
-];
 
 function dshHome(env = process.env) {
   return env.DSH_HOME || join(env.USERPROFILE || env.HOME || homedir(), '.dsh');
@@ -28,10 +23,6 @@ function dshHome(env = process.env) {
 
 export function sitesFile(env = process.env) {
   return join(dshHome(env), FILE_NAME);
-}
-
-export function legacySitesFile(env = process.env) {
-  return join(dshHome(env), LEGACY_FILE_NAME);
 }
 
 function readRaw(file) {
@@ -54,12 +45,10 @@ export function normalizeSite(raw) {
   }
 }
 
+/** 读清单。没有文件 = 空清单 —— 不预置、不回退到任何别的文件名。 */
 export function loadSites(env = process.env) {
-  const file = sitesFile(env);
-  const raw = readRaw(file) ?? (existsSync(file) ? null : readRaw(legacySitesFile(env)));
-  if (raw === null) {
-    return DEFAULTS.map((url) => ({ url, addedAt: null }));
-  }
+  const raw = readRaw(sitesFile(env));
+  if (raw === null) return [];
   return raw
     .map((item) => {
       const url = normalizeSite(item?.url);

@@ -14,7 +14,7 @@
  * 不让调用方猜。
  */
 
-import { evaluate, evaluateAllContexts, listTargets } from './browser-time.js';
+import { evaluate, evaluateAllContexts, listTargets } from './cdp.js';
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 

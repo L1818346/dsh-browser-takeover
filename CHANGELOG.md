@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.9.0] — 2026-10-31
+
+### Changed
+
+- **CDP 层收成一个小模块**：`src/browser-time.js` 换成 `src/cdp.js`，只保留这个插件真正用到的
+  能力——找页面目标、在页面/每个 iframe 上下文里求值、读 cookie、回答端口状态、按端口拉起浏览器。
+  删掉视频时代的位置读取（`readBrowserPosition`）、iframe 快照、`probeBrowser` 的视频扫描、
+  媒体 cookie 导出（`cookiesToNetscape` / `writeBrowserCookiesFile`）等：627 行 → 374 行。
+- **`probeBrowser` 语义简化**：状态只剩 `open` / `closed` / `unconfigured` / `error`，
+  不再返回"页面里有没有视频"。设置页文案同步。
+- **端口只认 `~/.dsh/browser.json`**：不再回退到 `video.json`（那是另一个插件的配置）。
+- **清单不再有默认项**：删掉预置的学习通入口与旧文件名 `video-storyboard-sites.json` 的回退。
+  新装的插件清单为空，第一条网址由用户自己加（设置页或 `web_open({ …, remember: true })`）。
+- **删除许可证的版权声明行**：`LICENSE` 保留 MIT 正文，不再有 `Copyright (c) …`。
+- 新增 `test/sites.test.mjs`：空清单、增删、重复、以及"存在旧文件名也不读"的行为。
+
 ## [0.8.1] — 2026-10-31
 
 ### Changed

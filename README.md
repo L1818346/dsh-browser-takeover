@@ -5,6 +5,18 @@
 
 ---
 
+## 0.9.0 改了什么
+
+- **清单从空开始**：不再预置任何网址，也不读别的插件留下的 `video-storyboard-sites.json`。
+  装好之后清单是空的，要加什么由你自己加（设置页，或 `web_open({ …, remember: true })`）。
+- **CDP 收成一个小模块** `src/cdp.js`：只留这个插件真正用到的几件事——找页面目标、
+  在页面/每个 iframe 上下文里求值、读 cookie、回答端口状态、按端口拉起浏览器。
+  视频时代的位置读取、封面/转码 cookie 导出等全部删掉。
+- **浏览器状态只有四种**：`open`（端口已开）/ `closed`（端口不通）/ `unconfigured`（没配端口）/ `error`。
+  设置页不再出现"页面里没有视频"这类词。
+- **端口只认 `~/.dsh/browser.json`**（不再读 `video.json`）。
+- 许可证正文保留，**版权声明行已删除**。
+
 ## 0.8.0 新增了什么
 
 - **`web_sites`**：访问网址前先查一次清单——这条地址存过没有、那个浏览器此刻登录着没有。
@@ -69,7 +81,7 @@ node scripts/install-dev.mjs     # 用 junction 挂进 desktop profile 并注册
 ```
 
 然后**重启 DSH Desktop**（插件树与系统提示都在进程启动时组装；工具与提示词的改动
-不重启不会生效）。
+不重启不会生效）。装好之后**清单是空的**，没有任何预置网址——第一条要你自己加。
 
 要求：
 
@@ -116,6 +128,8 @@ msedge.exe --remote-debugging-port=9333 --user-data-dir="%USERPROFILE%\.dsh\edge
 
 ## 用法
 
+清单初始是空的：第一条网址要么在设置页点「添加」，要么打开时顺手用 `remember: true` 记下来。
+
 ```js
 // 1. 先查：这条网址存过没有？（零成本）
 web_sites({ url: "https://hdu.fanya.chaoxing.com/portal" })
@@ -141,7 +155,8 @@ web_open({ match: "国家安全教育", index: 0 })
 
 ## 数据与隐私
 
-- 网址清单在 `~/.dsh/browser-takeover-sites.json`，只存 URL 和时间戳。
+- 网址清单在 `~/.dsh/browser-takeover-sites.json`，只存 URL 和时间戳；**初始为空**，
+  插件不预置、也不从别的文件名里捞。
 - 不读、不填账号密码输入框；不导出 cookie 的**值**。设置页和 `web_sites` 只回显会话 cookie 的
   **名字**（如 `SESSDATA`、`JSESSIONID`）。
 - 端口没开时，登录状态显示「无法判断」，而不是冒充「未登录」。

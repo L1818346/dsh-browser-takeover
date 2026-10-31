@@ -17,7 +17,7 @@
  */
 import {
   configuredPort, evaluate, launchBrowser, listTargets, waitForPort,
-} from './browser-time.js';
+} from './cdp.js';
 import { addSite, loadSites, removeSite } from './sites.js';
 import { describeSites, hostOf, signInStatus } from './session.js';
 

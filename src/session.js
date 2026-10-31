@@ -9,7 +9,7 @@
  *   - 端口没开 → `conclusive:false`（"无法判断"），绝不冒充"未登录"；
  *   - 端口开了 → 该站点的会话 cookie 存在即视为已登录。
  */
-import { listTargets, probeBrowser, readBrowserCookies } from './browser-time.js';
+import { listTargets, probeBrowser, readBrowserCookies } from './cdp.js';
 import { loadSites } from './sites.js';
 
 /** 这些 cookie 一旦出现，基本可以认定"这个浏览器在该站点是登录状态"。 */
@@ -72,21 +72,6 @@ export async function signInStatus(port, rawUrl) {
 }
 
 /**
- * 那个浏览器端口通不通——比 `probeBrowser` 便宜得多（不找 <video>、不扫 iframe）。
- * 查清单的工具只要回答"端口开没开、开着几个页面"，用这个就够。
- */
-export async function reachable(port) {
-  const targets = await listTargets({ port, timeoutMs: 900 }).catch(() => null);
-  if (!targets) return { state: 'closed', pages: 0 };
-  const pages = targets.filter((t) => t.type === 'page');
-  return {
-    state: 'open',
-    pages: pages.length,
-    urls: pages.slice(0, 3).map((t) => String(t.url ?? '')).filter(Boolean),
-  };
-}
-
-/**
  * 整个清单的状态快照：浏览器状态 + 打开的页面 + 每个站点的登录状态。
  * 一次调用只读一遍 cookie（4 个站点不该读 4 次）。
  *
@@ -94,9 +79,9 @@ export async function reachable(port) {
  *   conclusive:boolean, sites:Array<object>}>}
  */
 export async function describeSites(port, sites = loadSites()) {
-  const browser = await probeBrowser({ port }).catch(() => ({ state: 'error', port }));
+  const browser = await probeBrowser({ port }).catch(() => ({ state: 'error', port, pages: 0 }));
   const targets = (await listTargets({ port }).catch(() => null)) ?? [];
-  const conclusive = browser.state !== 'closed' && browser.state !== 'unconfigured' && browser.state !== 'error';
+  const conclusive = browser.state === 'open';
   const cookies = conclusive ? await cookiesSnapshot(port) : null;
   const pages = targets
     .filter((t) => t.type === 'page')

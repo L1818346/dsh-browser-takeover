@@ -116,7 +116,7 @@ export function webOpenToolSpec() {
       },
       browserPort: {
         type: 'number',
-        description: 'Debug port of the browser. Falls back to browser.json / video.json browserPort, then 9333.',
+        description: 'Debug port of the browser. Falls back to browser.json (browserPort), then 9333.',
       },
       waitMs: {
         type: 'number',

@@ -49,14 +49,16 @@ window.__ModuleLoader__.load({
 .dvs-empty { font-size: 13px; color: var(--dsw-alias-label-secondary); padding: 6px 0; }
 `;
 
-    /** 浏览器状态 → 中文（宿主给的是 watching / no-video / closed / unconfigured / error） */
+    /** 浏览器状态 → 中文（宿主给的是 open / closed / unconfigured / error） */
     function browserStateText(state) {
       switch (state) {
-        case 'watching': return '已连上，页面里能看到视频';
-        case 'no-video': return '端口已开，页面里没有视频';
+        case 'open': return '端口已开，可以走过去';
         case 'closed': return '端口未开（浏览器没带调试端口启动）';
         case 'unconfigured': return '没有配置调试端口';
         case 'error': return '探测失败';
+        // 旧版本的状态词：万一宿主还没重启，别显示成空白
+        case 'watching': return '端口已开，可以走过去';
+        case 'no-video': return '端口已开，可以走过去';
         default: return state ? String(state) : '—';
       }
     }

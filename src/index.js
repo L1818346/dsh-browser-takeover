@@ -8,7 +8,7 @@
  *      打开的同时回报"这条网址是否在清单里、登录着没有"，所以 Agent 先查后开都有据可依。
  *   3. 系统提示里的一段约定：访问网址先查清单，清单里有就优先走这个插件（见 prompt.js）。
  *
- * 端口配置优先读 `~/.dsh/browser.json`，也接受 `~/.dsh/video.json`。
+ * 端口配置优先读 `~/.dsh/browser.json`。
  *
  * 契约要点（对着 @deepseek-ai/dsh-tools 的类型定义核对的）：
  *  - `apply` 返回 disposer（把所有 ctx.tools.register() / 路由 / 监听 / 提示词段的返回值串起来）
@@ -16,10 +16,10 @@
  *  - 插件的异常不能拖垮宿主：apply 里一律吞掉并记日志（DSH_BROWSER_DEBUG=1 时才抛出）
  */
 
-import { configuredLaunch, configuredPort, launchBrowser, waitForPort } from './browser-time.js';
+import { configuredLaunch, configuredPort, launchBrowser, probeBrowser, waitForPort } from './cdp.js';
 import { addSite, loadSites } from './sites.js';
 import { describeLookup, isKnownSite, lookupSite } from './lookup.js';
-import { describeSites, reachable, signInStatus } from './session.js';
+import { describeSites, signInStatus } from './session.js';
 import { registerRoutingSection } from './prompt.js';
 import { webOpenToolSpec, webSitesToolSpec } from './tool-spec.js';
 import { webOpen } from './web-nav.js';
@@ -61,7 +61,7 @@ export async function apply(ctx) {
   }
 }
 
-/** 端口只该有一个说法：显式参数 > browser.json / video.json > 9333 */
+/** 端口只该有一个说法：显式参数 > browser.json > 9333 */
 function resolvePort(args) {
   const explicit = Number(args?.browserPort);
   if (Number.isFinite(explicit) && explicit > 0) return explicit;
@@ -91,29 +91,32 @@ async function registerAll(ctx) {
     async execute(args) {
       const port = resolvePort(args);
       const url = textArg(args?.url);
-      const browser = await reachable(port).catch(() => ({ state: 'unknown', pages: 0 }));
 
       if (!url) {
         const snapshot = await describeSites(port).catch(() => ({
-          port, browser, pages: [], conclusive: false, sites: [],
+          port, browser: { state: 'error', port, pages: 0 }, pages: [], conclusive: false, sites: [],
         }));
         return {
           text: JSON.stringify({
             ok: true,
             port,
-            browser: { ...snapshot.browser, state: snapshot.browser?.state ?? browser.state },
+            browser: snapshot.browser,
             conclusive: snapshot.conclusive,
             count: snapshot.sites.length,
             savedSites: snapshot.sites,
             note: snapshot.sites.length
               ? '这是插件清单里的全部网址；saved 恒为 true，signedIn 是那个浏览器此刻的登录状态。'
-              : '清单是空的：用户还没登记过任何网址。',
+              : '清单是空的：用户还没登记过任何网址，也没有默认项。',
           }, null, 1),
         };
       }
 
       const lookup = lookupSite(loadSites(), url);
-      const signIn = await signInStatus(port, url).catch(() => null);
+      // 两个探测互不依赖：并行问，别让一次查询串成两段超时
+      const [browser, signIn] = await Promise.all([
+        probeBrowser({ port }).catch(() => ({ state: 'error', port, pages: 0 })),
+        signInStatus(port, url).catch(() => null),
+      ]);
       return {
         text: JSON.stringify({
           ok: true,

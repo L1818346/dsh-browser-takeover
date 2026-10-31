@@ -6,6 +6,18 @@
 
 ---
 
+## What 0.9.0 changes
+
+- **The list starts empty** — no preset URL, and no reading another plugin's
+  `video-storyboard-sites.json`. You add the first site yourself (the settings page, or
+  `web_open({ …, remember: true })`).
+- **The CDP layer is one small module**, `src/cdp.js`: list page targets, evaluate in a page or in
+  every frame context, read cookies, report the port state, launch the browser on demand. The
+  video-era helpers (playback position, media cookie export) are gone.
+- **Four browser states only**: `open` / `closed` / `unconfigured` / `error`.
+- **The port comes from `~/.dsh/browser.json` only** (`video.json` is no longer read).
+- The MIT text stays; the copyright line was removed.
+
 ## What 0.8.0 adds
 
 - **`web_sites`** — look the saved list up before visiting: is this address saved, and is the
@@ -73,7 +85,8 @@ node scripts/install-dev.mjs     # junction into the desktop profile + register 
 ```
 
 Then **restart DSH Desktop** — the plugin tree and the system prompt are composed at process start,
-so tool and prompt changes need a restart.
+so tool and prompt changes need a restart. The site list **starts empty**: nothing is preset, the
+first site is yours to add.
 
 Requirements: Node.js ≥ 20 and Edge/Chrome (CDP via `--remote-debugging-port`).
 
@@ -118,6 +131,8 @@ One port, one answer.
 
 ## Usage
 
+The list starts empty: add the first URL on the settings page, or use `remember: true` while opening.
+
 ```js
 // 1. look it up first (free, no browser)
 web_sites({ url: "https://example.com/portal" })
@@ -143,7 +158,8 @@ instead of a guess.
 
 ## Data and privacy
 
-- Site list: `~/.dsh/browser-takeover-sites.json`.
+- Site list: `~/.dsh/browser-takeover-sites.json` — URLs and timestamps only, **empty by default**,
+  with nothing preset and nothing adopted from another plugin's file.
 - No credential reads/fills, no cookie **values** exported. The settings page and `web_sites` echo
   session cookie **names** only (`SESSDATA`, `JSESSIONID`, ...).
 - When the port is down, sign-in state is reported as "cannot tell", not "signed out".
