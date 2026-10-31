@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.8.1] — 2026-10-31
+
+### Changed
+
+- 移除上游来源与第三方声明：README / README.en 的「来源」段、`CREDITS.md`、`NOTICE`，以及
+  `package.json` 里的 `contributors` 与 `files` 条目。本插件已经不含来源项目的代码，也不再
+  引用它的文档与二进制说明（`NOTICE` 里提到的 `docs/demo*.png`、`vendor/ffmpeg` 在本仓库从未存在）。
+- 只有文档与元数据变化，运行时代码与 0.8.0 完全一致。
+
 ## [0.8.0] — 2026-10-31
 
 ### Added

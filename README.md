@@ -169,5 +169,4 @@ npm run smoke     # 用假的 defineTool 跑一遍 apply()，并真的执行两�
 
 ## 许可
 
-MIT。源自 [SAOS-3624/dsh-video-storyboard](https://github.com/SAOS-3624/dsh-video-storyboard)
-（MIT）；版权、第三方说明见 [LICENSE](LICENSE)、[CREDITS.md](CREDITS.md)、[NOTICE](NOTICE)。
+MIT。条款见 [LICENSE](LICENSE)。

@@ -171,5 +171,4 @@ npm run smoke     # apply() against a fake defineTool, then really runs both too
 
 ## License
 
-MIT. Upstream: [SAOS-3624/dsh-video-storyboard](https://github.com/SAOS-3624/dsh-video-storyboard).
-See [LICENSE](LICENSE), [CREDITS.md](CREDITS.md), [NOTICE](NOTICE).
+MIT. See [LICENSE](LICENSE).

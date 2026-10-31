@@ -1,6 +1,6 @@
 {
   "name": "dsh-browser-takeover",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "description": "浏览器网址接管：Agent 访问网址前先查「要登录的网址」清单（web_sites），清单里的优先用 web_open 在带调试端口的浏览器里打开；同时检查登录状态、打开登录页。不保存任何账号密码。",
   "keywords": [
     "dsh",
@@ -22,9 +22,6 @@
     "url": "git+https://github.com/L1818346/dsh-browser-takeover.git"
   },
   "author": "L1818346",
-  "contributors": [
-    "SAOS-3624"
-  ],
   "license": "MIT",
   "type": "module",
   "main": "./src/index.js",
@@ -53,9 +50,7 @@
     "README.md",
     "README.en.md",
     "CHANGELOG.md",
-    "LICENSE",
-    "CREDITS.md",
-    "NOTICE"
+    "LICENSE"
   ],
   "engines": {
     "node": ">=20"

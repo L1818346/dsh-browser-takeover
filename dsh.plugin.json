@@ -1,7 +1,7 @@
 {
   "name": "dsh-browser-takeover",
   "description": "浏览器网址接管：网址清单与登录状态、web_sites 清单查询、web_open 导航（Agent 访问网址前先查清单）。不保存账号密码。",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "entry": {
     "name": "dsh-browser-takeover",
     "inject": [
